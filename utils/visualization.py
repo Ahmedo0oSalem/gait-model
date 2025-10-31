@@ -23,7 +23,7 @@ def visualize_fold_accuracies(fold_accuracies, save_path=None):
         plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005, f"{acc:.2f}",
                  ha='center', va='bottom', fontsize=10)
 
-    plt.title("K-Fold Cross-Validation Accuracies")
+    plt.title("K-Fold Cross-Validation Accuracies Multiclass")
     plt.xlabel("Fold")
     plt.ylabel("Accuracy")
     plt.xticks(range(1, num_folds + 1))

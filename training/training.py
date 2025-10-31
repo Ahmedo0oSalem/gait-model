@@ -5,14 +5,19 @@ import torch.nn as nn
 from torch.optim import Adam
 from tqdm import tqdm
 import inspect
+import os
 
 from data.data_preprocessor import load_gait_sequences
-from data.dataset import GaitOpticalFlowDataset  # Updated dataset import
+from data.dataset import GaitFrameDataset  # Updated dataset import
 from models.gaitLSTM import GEIConvLSTMClassifier
 from models.gait3DCNN import Gait3DCNNClassifier
 from models.gaitFlow3DCNN import Flow3DCNNClassifier
 from utils.visualization import visualize_fold_accuracies
 from data.kcv import run_kfold_cross_validation
+from models.gait2DCNN import Gait2DCNN
+from data.dataset import GaitFrameSequenceDataset
+from data.dataset import GaitOpticalFlowDataset
+
 
 def evaluate_model(model, data_loader, device, use_seq_len, use_tqdm=True, label="Validation"):
     model.eval()
@@ -101,6 +106,9 @@ def run_kfold_training(
 
     labels = df['label'].values
     skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
+    # 🔨 ADDED: Setup save directory
+    save_dir = "saved_models"
+    os.makedirs(save_dir, exist_ok=True)
 
     for fold_idx, (train_idx, val_idx) in enumerate(skf.split(df, labels)):
         print(f"\n--- Fold {fold_idx + 1} ---")
@@ -147,6 +155,12 @@ def run_kfold_training(
             use_tqdm=use_tqdm
         )
 
+        # 💾 ADDED: Model Saving Logic
+        model_filename = os.path.join(save_dir, f"{model_class.__name__}_fold_{fold_idx + 1}.pth")
+        torch.save(model.state_dict(), model_filename)
+        print(f"Model saved to {model_filename}")
+        # 💾 END Model Saving Logic
+
         train_accuracies.append(train_acc)
         val_accuracies.append(val_acc)
 
@@ -156,11 +170,16 @@ def run_kfold_training(
     return val_accuracies
 
 if __name__ == "__main__":
-    df = load_gait_sequences("/Users/mistaluai/Documents/Github Repos/gait-model/data/gei_maps/Multiclass6", load_images=False)
-
+    df = load_gait_sequences(r"D:\GEI\gait-model\data\Multiclass6", load_images=False)
+    for root, dirs, files in os.walk(r"D:\GEI\gait-model\data\Multiclass6"):
+        print(root)
+    print(df['label'].nunique())
+    print("Unique labels in dataset:", df['label'].unique())
+    print("Number of unique labels:", df['label'].nunique())
     accuracies = run_kfold_training(
         df=df,
-        model_class=GEIConvLSTMClassifier,
+        model_class=Gait2DCNN,
+        dataset_class=GaitFrameDataset,
         num_classes=6,
         k_folds=5,
         epochs=10,
@@ -168,7 +187,7 @@ if __name__ == "__main__":
         lr=1e-3,
         num_workers=2,
         use_tqdm=True,
-        use_tvl1=True,
+        use_tvl1=False,
         flow_augment=...
     )
 

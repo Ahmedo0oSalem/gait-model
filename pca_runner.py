@@ -13,9 +13,9 @@ from datetime import datetime
 
 def main():
     dataset_paths = {
-        "Binary": "GEI_maps/Binary",
-        "Multiclass4": "GEI_maps/Multiclass4",
-        "Multiclass6": "GEI_maps/Multiclass6"
+        "Binary": "gait-model\data\Binary",
+        "Multiclass4": "gait-model\data\Multiclass4",
+        "Multiclass6": "gait-model\data\Multiclass6"
     }
 
     target_size = (64, 64)
