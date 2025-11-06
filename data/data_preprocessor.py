@@ -157,7 +157,7 @@ def load_gait_sequences(
     return build_dataframe(grouped, load_images, include_metadata, min_sequence_length=min_sequence_length)
 
 if __name__ == '__main__':
-    df = load_gait_frames(r"E:\GEI\gait-model\data\Binary", load_images=False)
+    df = load_gait_frames(r"D:\GEI\gait-model\data\Multiclass6", load_images=False)
     print(df.columns)
     print(df.sample(10))
     print("Total frames:", len(df))

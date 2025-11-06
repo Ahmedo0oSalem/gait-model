@@ -92,6 +92,17 @@ class GaitFrameDataset(Dataset):
         self.train_augmentations = train_augmentations
         self.return_metadata = return_metadata
 
+        if aggregate_lr_labels:
+            aggregation_map = {
+                'a-l0': 'arm', 'a-r0': 'arm', 'a-l0.5': 'arm', 'a-r0.5': 'arm',
+                'l-l0.5': 'leg', 'l-r0.5': 'leg',
+                'nm': 'nm',
+                'fb': 'fb'
+            }
+            # Replace original labels in dataframe with aggregated classes
+            self.data['label'] = self.data['label'].apply(lambda x: aggregation_map.get(x, x))
+
+    # Then proceed with label encoding as usual:
         # Step 3: Label encoding
         if label_to_index is None:
             classes = sorted(self.data['label'].unique())

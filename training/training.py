@@ -95,7 +95,8 @@ def run_kfold_training(
     num_workers=1,
     use_tqdm=True,
     use_tvl1=False,
-    flow_augment=None
+    flow_augment=None,
+    aggregate_lr_labels=False
 ):
     from torch.utils.data import DataLoader
     from sklearn.model_selection import StratifiedKFold
@@ -115,6 +116,7 @@ def run_kfold_training(
 
         train_df = df.iloc[train_idx].reset_index(drop=True)
         val_df = df.iloc[val_idx].reset_index(drop=True)
+        aggregate = aggregate_lr_labels
         if isinstance(dataset_class, GaitOpticalFlowDataset):
             train_dataset = dataset_class(
                 dataframe=train_df,
@@ -129,12 +131,15 @@ def run_kfold_training(
             )
         else:
             train_dataset = dataset_class(
-                dataframe=train_df
-
+                dataframe=train_df,
+                aggregate_lr_labels=aggregate
             )
+            print("Unique labels in dataset:", train_dataset.data['label'].unique())
+
 
             val_dataset = dataset_class(
-                dataframe=val_df
+                dataframe=val_df,
+                aggregate_lr_labels=aggregate
             )
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -170,8 +175,8 @@ def run_kfold_training(
     return val_accuracies
 
 if __name__ == "__main__":
-    df = load_gait_sequences(r"D:\GEI\gait-model\data\Multiclass6", load_images=False)
-    for root, dirs, files in os.walk(r"D:\GEI\gait-model\data\Multiclass6"):
+    df = load_gait_sequences(r"D:\GEI\gait-model\data\Multiclass4", load_images=False)
+    for root, dirs, files in os.walk(r"D:\GEI\gait-model\data\Multiclass4"):
         print(root)
     print(df['label'].nunique())
     print("Unique labels in dataset:", df['label'].unique())
@@ -188,7 +193,8 @@ if __name__ == "__main__":
         num_workers=2,
         use_tqdm=True,
         use_tvl1=False,
-        flow_augment=...
+        flow_augment=...,
+        aggregate_lr_labels=True
     )
 
     visualize_fold_accuracies(accuracies)
