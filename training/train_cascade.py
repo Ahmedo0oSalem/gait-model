@@ -19,22 +19,24 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # -------------------------------
 # Train a single stage
 # -------------------------------
-def train_stage(df, num_classes, save_name, pretrained_path=None, epochs=10):
-    """
-    df: DataFrame for this stage
-    num_classes: number of classes
-    save_name: filename to save best weights
-    pretrained_path: previous stage weights (optional)
-    """
+from pathlib import Path
+import torch
 
-    # Model builder with optional pretrained weights
+def train_stage(df, num_classes, save_name, pretrained_path=None,epochs=10):
+
+    
+    save_dir = Path.cwd() / "saved_models"
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     def model_builder(num_classes=num_classes):
         model = Gait2DCNNDescendingCascade(num_classes=num_classes)
+
         if pretrained_path:
             load_partial_weights(model, pretrained_path, DEVICE)
+
         return model
 
-    # Run k-fold training
+    # run training
     accuracies = run_kfold_training(
         df=df,
         model_class=model_builder,
@@ -49,15 +51,30 @@ def train_stage(df, num_classes, save_name, pretrained_path=None, epochs=10):
         aggregate_lr_labels=False
     )
 
-    best_model_path = Path("saved_models") / save_name
-    print(f"✅ Stage saved → {best_model_path}")
-    return best_model_path
+    # ------------------------------------------------
+    # SELECT BEST FOLD MODEL
+    # ------------------------------------------------
+    best_fold = accuracies.index(max(accuracies)) + 1
+
+    best_fold_path = save_dir / f"model_builder_fold_{best_fold}_best.pth"
+    final_stage_path = save_dir / save_name
+
+    torch.save(torch.load(best_fold_path), final_stage_path)
+
+    print(f"\n✅ Best fold = {best_fold}")
+    print(f"✅ Stage model saved → {final_stage_path}")
+
+    return final_stage_path
+
 
 
 # -------------------------------
 # Full Cascade Training
 # -------------------------------
 if __name__ == "__main__":
+    import os
+    print(Path.cwd())
+
 
     processed_path = r"D:\GEI\gait-model\processed_dataset"
     Path("saved_modelscascade").mkdir(exist_ok=True)
@@ -77,7 +94,7 @@ if __name__ == "__main__":
         num_classes=2,
         save_name="stage1_best.pth",
         pretrained_path=None,
-        epochs=20
+        epochs=10
     )
 
     print("\n====================")
@@ -96,7 +113,7 @@ if __name__ == "__main__":
         num_classes=2,
         save_name="stage2_best.pth",
         pretrained_path=stage1_weights,
-        epochs=20
+        epochs=10
     )
 
     print("\n====================")
@@ -115,7 +132,7 @@ if __name__ == "__main__":
         num_classes=2,
         save_name="stage3_arm_best.pth",
         pretrained_path=stage2_weights,
-        epochs=20
+        epochs=10
     )
 
     print("\n====================")
@@ -133,7 +150,7 @@ if __name__ == "__main__":
         num_classes=2,
         save_name="stage3_leg_best.pth",
         pretrained_path=stage2_weights,
-        epochs=20
+        epochs=10
     )
 
     print("\n🎯 CASCADE TRAINING COMPLETE")
